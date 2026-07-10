@@ -4,6 +4,8 @@ import * as path from "path";
 import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
 import type { AuthResult } from "./types";
 
+const ACCESS_TOKEN_KEY = "cursorAuth/accessToken";
+
 let sqlPromise: Promise<SqlJsStatic> | undefined;
 
 function getSql(): Promise<SqlJsStatic> {
@@ -50,6 +52,12 @@ export function getStateDbPath(): string {
   }
 }
 
+function wipeBuffer(buffer: Buffer | undefined): void {
+  if (buffer && buffer.length > 0) {
+    buffer.fill(0);
+  }
+}
+
 function readItemValue(db: Database, key: string): string | null {
   const stmt = db.prepare("SELECT value FROM ItemTable WHERE key = ?");
   try {
@@ -61,7 +69,9 @@ function readItemValue(db: Database, key: string): string | null {
         return value;
       }
       if (value instanceof Uint8Array) {
-        return Buffer.from(value).toString("utf8");
+        const text = Buffer.from(value).toString("utf8");
+        // value may share backing store with wasm heap; do not mutate it.
+        return text;
       }
     }
     return null;
@@ -72,7 +82,9 @@ function readItemValue(db: Database, key: string): string | null {
 
 /**
  * Read cursorAuth/accessToken from Cursor's local SQLite DB.
- * Does not cache the token — callers should re-read on each refresh.
+ * Does not cache the token — re-read on each refresh so logout clears access.
+ * sql.js requires loading the DB file into memory; the Node buffer is wiped
+ * immediately after the in-memory DB is constructed.
  */
 export async function readAccessToken(): Promise<AuthResult> {
   const dbPath = getStateDbPath();
@@ -96,7 +108,7 @@ export async function readAccessToken(): Promise<AuthResult> {
     };
   }
 
-  let fileBuffer: Buffer;
+  let fileBuffer: Buffer | undefined;
   try {
     fileBuffer = fs.readFileSync(dbPath);
   } catch (err) {
@@ -109,8 +121,12 @@ export async function readAccessToken(): Promise<AuthResult> {
 
   let db: Database | undefined;
   try {
+    // sql.js copies into its wasm heap; wipe our Node copy right away.
     db = new SQL.Database(fileBuffer);
-    const accessToken = readItemValue(db, "cursorAuth/accessToken");
+    wipeBuffer(fileBuffer);
+    fileBuffer = undefined;
+
+    const accessToken = readItemValue(db, ACCESS_TOKEN_KEY);
     if (!accessToken || accessToken.trim().length === 0) {
       return {
         ok: false,
@@ -126,6 +142,7 @@ export async function readAccessToken(): Promise<AuthResult> {
       dbPath,
     };
   } finally {
+    wipeBuffer(fileBuffer);
     db?.close();
   }
 }

@@ -4,6 +4,11 @@ import type { UsageSnapshot } from "./types";
 const FILLED = "█";
 const EMPTY = "░";
 
+const TRUSTED_TOOLTIP_COMMANDS = [
+  "tokentrack.openDashboard",
+  "tokentrack.refresh",
+] as const;
+
 export function clampPercent(value: number): number {
   if (!Number.isFinite(value)) {
     return 0;
@@ -28,12 +33,18 @@ export function formatStatusText(
   return `${label} ${formatBar(pct, barWidth)} ${pct}%`;
 }
 
+/** Escape API/user text so it cannot inject markdown links or formatting. */
+export function escapeMarkdown(text: string): string {
+  return text.replace(/[\\`*_{}[\]()#+\-.!|>]/g, "\\$&");
+}
+
 export function buildTooltip(
   snapshot: UsageSnapshot,
   kind: "auto" | "api" | "total"
 ): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
-  md.isTrusted = true;
+  // Only allow our own command links — not arbitrary command: URIs from API text.
+  md.isTrusted = { enabledCommands: [...TRUSTED_TOOLTIP_COMMANDS] };
   md.supportHtml = false;
 
   const lines: string[] = ["**TokenTrack**", ""];
@@ -52,10 +63,10 @@ export function buildTooltip(
   }
 
   if (snapshot.billingCycleEnd) {
-    lines.push(`Renews: ${snapshot.billingCycleEnd}`);
+    lines.push(`Renews: ${escapeMarkdown(snapshot.billingCycleEnd)}`);
   }
   if (snapshot.displayMessage) {
-    lines.push("", snapshot.displayMessage);
+    lines.push("", escapeMarkdown(snapshot.displayMessage));
   }
 
   lines.push(
