@@ -1,72 +1,59 @@
 # TokenTrack
 
-Dual **Auto** (green) and **API** (orange) token-usage progress bars in the Cursor status bar.
+See your **Cursor Premium** token usage at a glance — dual **Auto** (green) and **API** (orange) progress bars in the status bar.
 
-No API key. TokenTrack reads the session Cursor already stores when you are signed in, then polls usage every 15 seconds.
+No API key setup. If you’re signed into Cursor, TokenTrack just works. Sign out, and it stops automatically.
 
-## Install
+## Features
 
-### From VSIX
+- Live **Auto** and **API** usage bars in the status bar
+- Hover for exact percentages, renew date, and plan notes
+- Click a bar to refresh instantly
+- Open your Cursor usage dashboard from the tooltip or Command Palette
+- Configurable poll interval, bar width, and which bars to show
 
-```bash
-npm install
-npm run package
-```
+## Requirements
 
-In Cursor: **Extensions: Install from VSIX…** → select `tokentrack-0.1.0.vsix`.
+- [Cursor](https://cursor.com) with an active signed-in session (Premium usage data comes from your account)
+- Works locally on your machine — TokenTrack does not store your session
 
-### Development
+## How to use
 
-```bash
-npm install
-npm run compile
-```
+1. Install **TokenTrack** from the marketplace
+2. Stay signed into Cursor
+3. Look at the **bottom-right status bar** for the Auto / API bars
 
-Press **F5** (Run Extension) to open an Extension Development Host.
+| What you see | Meaning |
+|--------------|---------|
+| `Auto ████░░░░ 42%` | Auto-mode usage this billing period |
+| `API ██░░░░░░ 18%` | API / named-model usage this billing period |
+| `Total ████░░░░ 55%` | Shown only if Auto/API split isn’t available |
 
-## What you see
+### Commands
 
-| Item | Meaning |
-|------|---------|
-| `Auto ████░░░░ 42%` | Auto-mode usage (`autoPercentUsed`) |
-| `API ██░░░░░░ 18%` | API / named-model usage (`apiPercentUsed`) |
-| `Total ████░░░░ 55%` | Fallback when Auto/API split is not returned |
-
-Click either bar to refresh. Hover for exact percentages, renew date, and a link to the usage dashboard.
-
-## Settings
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `tokentrack.pollIntervalSeconds` | `15` | Refresh interval (min 5) |
-| `tokentrack.barWidth` | `8` | ASCII bar width |
-| `tokentrack.showAuto` | `true` | Show Auto bar |
-| `tokentrack.showApi` | `true` | Show API bar |
-
-## How it works
-
-1. Reads `cursorAuth/accessToken` from Cursor’s local SQLite DB (`state.vscdb`) via native SQLite (not loaded fully into memory).
-2. Calls `POST https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage`.
-3. Renders two status-bar items from `planUsage.autoPercentUsed` and `planUsage.apiPercentUsed`.
-
-The token is never stored by TokenTrack — each refresh re-reads Cursor’s DB, so signing out clears access automatically.
-
-### Database paths
-
-| OS | Path |
-|----|------|
-| macOS | `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` |
-| Windows | `%APPDATA%\Cursor\User\globalStorage\state.vscdb` |
-| Linux | `~/.config/Cursor/User/globalStorage/state.vscdb` |
-
-## Commands
+Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
 
 - **TokenTrack: Refresh Usage**
 - **TokenTrack: Open Usage Dashboard**
 
+### Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `tokentrack.pollIntervalSeconds` | `15` | How often usage refreshes (5–600) |
+| `tokentrack.barWidth` | `8` | Width of each progress bar |
+| `tokentrack.showAuto` | `true` | Show the Auto bar |
+| `tokentrack.showApi` | `true` | Show the API bar |
+
+## Privacy
+
+- Reads your existing Cursor session from local storage only when needed
+- Does **not** save or cache your access token
+- Signing out of Cursor clears access on the next refresh
+
 ## Disclaimer
 
-This is **not** an official Cursor product. It uses undocumented local storage keys and internal HTTPS endpoints that can change without notice.
+TokenTrack is **not** an official Cursor product. It uses local session data and Cursor’s usage API, which may change without notice.
 
 ## License
 
