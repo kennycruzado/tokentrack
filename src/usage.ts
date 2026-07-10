@@ -47,6 +47,18 @@ function formatCycleEnd(value: string | number | undefined): string | null {
   return date.toISOString().slice(0, 10);
 }
 
+/** Keep display text short and strip URI schemes that could become clickable. */
+function sanitizeDisplayMessage(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.replace(/\s+/g, " ").trim().slice(0, 400);
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.replace(/\b(command|vscode|https?|file):/gi, "");
+}
+
 export class UsageFetchError extends Error {
   constructor(
     message: string,
@@ -120,10 +132,10 @@ export async function fetchCurrentPeriodUsage(
     apiPercent,
     totalPercent,
     billingCycleEnd: formatCycleEnd(data.billingCycleEnd),
-    displayMessage:
+    displayMessage: sanitizeDisplayMessage(
       data.displayMessage ??
-      data.autoModelSelectedDisplayMessage ??
-      data.namedModelSelectedDisplayMessage ??
-      null,
+        data.autoModelSelectedDisplayMessage ??
+        data.namedModelSelectedDisplayMessage
+    ),
   };
 }

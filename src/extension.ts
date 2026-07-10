@@ -20,7 +20,10 @@ let lastSnapshot: UsageSnapshot | null = null;
 function getConfig() {
   const cfg = vscode.workspace.getConfiguration("tokentrack");
   return {
-    pollIntervalSeconds: Math.max(5, cfg.get<number>("pollIntervalSeconds", 15)),
+    pollIntervalSeconds: Math.max(
+      5,
+      Math.min(600, cfg.get<number>("pollIntervalSeconds", 15))
+    ),
     barWidth: Math.max(4, Math.min(20, cfg.get<number>("barWidth", 8))),
     showAuto: cfg.get<boolean>("showAuto", true),
     showApi: cfg.get<boolean>("showApi", true),
@@ -136,13 +139,22 @@ async function refreshUsage(): Promise<void> {
   try {
     const auth = await readAccessToken();
     if (!auth.ok) {
+      // Signed out / missing session — drop cached UI state (token is never stored).
+      lastSnapshot = null;
       showError(auth.reason);
       return;
     }
 
+    // Token is read fresh each poll and not persisted; logout clears Cursor's DB.
     const snapshot = await fetchCurrentPeriodUsage(auth.accessToken);
     applySnapshot(snapshot);
   } catch (err) {
+    const expired =
+      err instanceof UsageFetchError &&
+      (err.status === 401 || err.status === 403);
+    if (expired) {
+      lastSnapshot = null;
+    }
     const message =
       err instanceof UsageFetchError
         ? err.message
