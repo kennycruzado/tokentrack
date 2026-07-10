@@ -5,6 +5,7 @@ node_modules/**
 .gitignore
 tsconfig.json
 esbuild.mjs
+DEVELOPMENT.md
 **/*.map
 **/*.ts
 !out/**

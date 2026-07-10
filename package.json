@@ -1,10 +1,15 @@
 {
   "name": "tokentrack",
   "displayName": "TokenTrack",
-  "description": "Dual Auto/API token usage progress bars in the Cursor status bar",
-  "version": "0.1.0",
+  "description": "See Cursor Premium Auto and API token usage as live progress bars in the status bar.",
+  "version": "0.1.1",
   "publisher": "kennycruzado",
   "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1A1D21",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/kennycruzado/tokentrack.git"
@@ -12,6 +17,7 @@
   "bugs": {
     "url": "https://github.com/kennycruzado/tokentrack/issues"
   },
+  "homepage": "https://github.com/kennycruzado/tokentrack#readme",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -23,7 +29,8 @@
     "tokens",
     "usage",
     "billing",
-    "status bar"
+    "status bar",
+    "premium"
   ],
   "activationEvents": [
     "onStartupFinished"
