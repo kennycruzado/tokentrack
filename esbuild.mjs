@@ -1,5 +1,5 @@
 import * as esbuild from "esbuild";
-import { copyFileSync, mkdirSync, existsSync, unlinkSync } from "fs";
+import { mkdirSync, existsSync, unlinkSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -10,7 +10,7 @@ const ctx = await esbuild.context({
   entryPoints: ["src/extension.ts"],
   bundle: true,
   outfile: "out/extension.js",
-  external: ["vscode"],
+  external: ["vscode", "node:sqlite"],
   format: "cjs",
   platform: "node",
   target: "node18",
@@ -19,27 +19,24 @@ const ctx = await esbuild.context({
   logLevel: "info",
 });
 
-function copySqlWasm() {
-  const destDir = join(__dirname, "out");
-  if (!existsSync(destDir)) {
-    mkdirSync(destDir, { recursive: true });
-  }
-  const src = join(__dirname, "node_modules", "sql.js", "dist", "sql-wasm.wasm");
-  const dest = join(destDir, "sql-wasm.wasm");
-  copyFileSync(src, dest);
-}
-
 if (watch) {
   await ctx.watch();
-  copySqlWasm();
   console.log("watching…");
 } else {
   await ctx.rebuild();
-  copySqlWasm();
+  const outDir = join(__dirname, "out");
+  if (!existsSync(outDir)) {
+    mkdirSync(outDir, { recursive: true });
+  }
   // Drop any leftover maps from watch builds so they are not packaged
-  const mapPath = join(__dirname, "out", "extension.js.map");
+  const mapPath = join(outDir, "extension.js.map");
   if (existsSync(mapPath)) {
     unlinkSync(mapPath);
+  }
+  // Remove leftover sql.js wasm from older builds
+  const wasmPath = join(outDir, "sql-wasm.wasm");
+  if (existsSync(wasmPath)) {
+    unlinkSync(wasmPath);
   }
   await ctx.dispose();
 }

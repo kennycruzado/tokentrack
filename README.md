@@ -45,9 +45,11 @@ Click either bar to refresh. Hover for exact percentages, renew date, and a link
 
 ## How it works
 
-1. Reads `cursorAuth/accessToken` from Cursor’s local SQLite DB (`state.vscdb`).
+1. Reads `cursorAuth/accessToken` from Cursor’s local SQLite DB (`state.vscdb`) via native SQLite (not loaded fully into memory).
 2. Calls `POST https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage`.
 3. Renders two status-bar items from `planUsage.autoPercentUsed` and `planUsage.apiPercentUsed`.
+
+The token is never stored by TokenTrack — each refresh re-reads Cursor’s DB, so signing out clears access automatically.
 
 ### Database paths
 

@@ -1,22 +1,12 @@
+import { execFile } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import initSqlJs, { type Database, type SqlJsStatic } from "sql.js";
+import { promisify } from "util";
 import type { AuthResult } from "./types";
 
 const ACCESS_TOKEN_KEY = "cursorAuth/accessToken";
-
-let sqlPromise: Promise<SqlJsStatic> | undefined;
-
-function getSql(): Promise<SqlJsStatic> {
-  if (!sqlPromise) {
-    const wasmPath = path.join(__dirname, "sql-wasm.wasm");
-    sqlPromise = initSqlJs({
-      locateFile: () => wasmPath,
-    });
-  }
-  return sqlPromise;
-}
+const execFileAsync = promisify(execFile);
 
 /** Resolve Cursor's state.vscdb path for the current OS. */
 export function getStateDbPath(): string {
@@ -52,39 +42,85 @@ export function getStateDbPath(): string {
   }
 }
 
-function wipeBuffer(buffer: Buffer | undefined): void {
-  if (buffer && buffer.length > 0) {
-    buffer.fill(0);
+function valueToString(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (value instanceof Uint8Array) {
+    const trimmed = Buffer.from(value).toString("utf8").trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (Buffer.isBuffer(value)) {
+    const trimmed = value.toString("utf8").trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return null;
+}
+
+/**
+ * Open the live DB file (respects WAL) without loading the whole multi‑GB
+ * file into memory — unlike sql.js.
+ */
+function readViaNodeSqlite(dbPath: string): string | null {
+  const sqlite = require("node:sqlite") as {
+    DatabaseSync: new (
+      path: string,
+      options?: { readOnly?: boolean }
+    ) => {
+      prepare(sql: string): {
+        get: (...params: unknown[]) => { value?: unknown } | undefined;
+      };
+      close(): void;
+    };
+  };
+
+  const db = new sqlite.DatabaseSync(dbPath, { readOnly: true });
+  try {
+    const row = db
+      .prepare("SELECT value FROM ItemTable WHERE key = ?")
+      .get(ACCESS_TOKEN_KEY);
+    return valueToString(row?.value);
+  } finally {
+    db.close();
   }
 }
 
-function readItemValue(db: Database, key: string): string | null {
-  const stmt = db.prepare("SELECT value FROM ItemTable WHERE key = ?");
-  try {
-    stmt.bind([key]);
-    if (stmt.step()) {
-      const row = stmt.getAsObject() as { value?: string | Uint8Array };
-      const value = row.value;
-      if (typeof value === "string") {
-        return value;
-      }
-      if (value instanceof Uint8Array) {
-        const text = Buffer.from(value).toString("utf8");
-        // value may share backing store with wasm heap; do not mutate it.
-        return text;
-      }
+/** Fallback when node:sqlite is unavailable in the extension host. */
+async function readViaSqliteCli(dbPath: string): Promise<string | null> {
+  // Key is a fixed constant — safe to embed. Avoids shell interpolation.
+  const sql = `SELECT value FROM ItemTable WHERE key='${ACCESS_TOKEN_KEY}';`;
+  const { stdout } = await execFileAsync(
+    "sqlite3",
+    ["-readonly", dbPath, sql],
+    {
+      encoding: "utf8",
+      maxBuffer: 2 * 1024 * 1024,
+      timeout: 10_000,
+      windowsHide: true,
     }
-    return null;
-  } finally {
-    stmt.free();
-  }
+  );
+  const trimmed = stdout.replace(/\r?\n$/, "").trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isModuleNotFound(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const code =
+    typeof err === "object" && err !== null && "code" in err
+      ? String((err as { code?: unknown }).code ?? "")
+      : "";
+  return (
+    code === "ERR_UNKNOWN_BUILTIN_MODULE" ||
+    code === "MODULE_NOT_FOUND" ||
+    /Cannot find module ['"]node:sqlite['"]/i.test(message) ||
+    /No such built-in module:\s*node:sqlite/i.test(message)
+  );
 }
 
 /**
  * Read cursorAuth/accessToken from Cursor's local SQLite DB.
  * Does not cache the token — re-read on each refresh so logout clears access.
- * sql.js requires loading the DB file into memory; the Node buffer is wiped
- * immediately after the in-memory DB is constructed.
  */
 export async function readAccessToken(): Promise<AuthResult> {
   const dbPath = getStateDbPath();
@@ -92,57 +128,51 @@ export async function readAccessToken(): Promise<AuthResult> {
   if (!fs.existsSync(dbPath)) {
     return {
       ok: false,
-      reason: "Cursor state database not found. Is Cursor installed and signed in?",
+      reason:
+        "Cursor state database not found. Is Cursor installed and signed in?",
       dbPath,
     };
   }
 
-  let SQL: SqlJsStatic;
-  try {
-    SQL = await getSql();
-  } catch (err) {
-    return {
-      ok: false,
-      reason: `Failed to load SQLite engine: ${err instanceof Error ? err.message : String(err)}`,
-      dbPath,
-    };
-  }
+  const errors: string[] = [];
 
-  let fileBuffer: Buffer | undefined;
   try {
-    fileBuffer = fs.readFileSync(dbPath);
-  } catch (err) {
-    return {
-      ok: false,
-      reason: `Cannot read Cursor state database: ${err instanceof Error ? err.message : String(err)}`,
-      dbPath,
-    };
-  }
-
-  let db: Database | undefined;
-  try {
-    // sql.js copies into its wasm heap; wipe our Node copy right away.
-    db = new SQL.Database(fileBuffer);
-    wipeBuffer(fileBuffer);
-    fileBuffer = undefined;
-
-    const accessToken = readItemValue(db, ACCESS_TOKEN_KEY);
-    if (!accessToken || accessToken.trim().length === 0) {
-      return {
-        ok: false,
-        reason: "No access token found. Sign in to Cursor, then refresh.",
-        dbPath,
-      };
+    const accessToken = readViaNodeSqlite(dbPath);
+    if (accessToken) {
+      return { ok: true, accessToken, dbPath };
     }
-    return { ok: true, accessToken: accessToken.trim(), dbPath };
-  } catch (err) {
     return {
       ok: false,
-      reason: `Failed to query Cursor auth: ${err instanceof Error ? err.message : String(err)}`,
+      reason: "No access token found. Sign in to Cursor, then refresh.",
       dbPath,
     };
-  } finally {
-    wipeBuffer(fileBuffer);
-    db?.close();
+  } catch (err) {
+    if (!isModuleNotFound(err)) {
+      errors.push(
+        `node:sqlite: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
+
+  try {
+    const accessToken = await readViaSqliteCli(dbPath);
+    if (accessToken) {
+      return { ok: true, accessToken, dbPath };
+    }
+    return {
+      ok: false,
+      reason: "No access token found. Sign in to Cursor, then refresh.",
+      dbPath,
+    };
+  } catch (err) {
+    errors.push(
+      `sqlite3: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+
+  return {
+    ok: false,
+    reason: `Failed to query Cursor auth (${errors.join("; ") || "no reader available"}).`,
+    dbPath,
+  };
 }
