@@ -6,15 +6,11 @@ const USAGE_URL =
 interface PlanUsage {
   autoPercentUsed?: number;
   apiPercentUsed?: number;
-  totalPercentUsed?: number;
 }
 
 interface PeriodUsageResponse {
   planUsage?: PlanUsage;
   billingCycleEnd?: string | number;
-  displayMessage?: string;
-  autoModelSelectedDisplayMessage?: string;
-  namedModelSelectedDisplayMessage?: string;
 }
 
 function toNumber(value: unknown): number | null {
@@ -47,18 +43,6 @@ function formatCycleEnd(value: string | number | undefined): string | null {
   return date.toISOString().slice(0, 10);
 }
 
-/** Keep display text short and strip URI schemes that could become clickable. */
-function sanitizeDisplayMessage(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const trimmed = value.replace(/\s+/g, " ").trim().slice(0, 400);
-  if (!trimmed) {
-    return null;
-  }
-  return trimmed.replace(/\b(command|vscode|https?|file):/gi, "");
-}
-
 export class UsageFetchError extends Error {
   constructor(
     message: string,
@@ -70,7 +54,7 @@ export class UsageFetchError extends Error {
 }
 
 /**
- * Fetch current-period Auto / API usage percentages from Cursor's dashboard API.
+ * Fetch current-period FPM (auto) / API usage from Cursor's dashboard API.
  */
 export async function fetchCurrentPeriodUsage(
   accessToken: string
@@ -123,19 +107,10 @@ export async function fetchCurrentPeriodUsage(
   }
 
   const plan = data.planUsage ?? {};
-  const autoPercent = toNumber(plan.autoPercentUsed);
-  const apiPercent = toNumber(plan.apiPercentUsed);
-  const totalPercent = toNumber(plan.totalPercentUsed);
 
   return {
-    autoPercent,
-    apiPercent,
-    totalPercent,
+    autoPercent: toNumber(plan.autoPercentUsed),
+    apiPercent: toNumber(plan.apiPercentUsed),
     billingCycleEnd: formatCycleEnd(data.billingCycleEnd),
-    displayMessage: sanitizeDisplayMessage(
-      data.displayMessage ??
-        data.autoModelSelectedDisplayMessage ??
-        data.namedModelSelectedDisplayMessage
-    ),
   };
 }

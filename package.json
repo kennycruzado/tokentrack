@@ -1,8 +1,8 @@
 {
   "name": "tokentrack",
   "displayName": "TokenTrack",
-  "description": "See Cursor Premium Auto and API token usage as live progress bars in the status bar.",
-  "version": "0.1.1",
+  "description": "See Cursor Premium FPM (First-party models) and API token usage in the status bar.",
+  "version": "0.1.4",
   "publisher": "kennycruzado",
   "license": "MIT",
   "icon": "icon.png",
@@ -30,7 +30,8 @@
     "usage",
     "billing",
     "status bar",
-    "premium"
+    "premium",
+    "fpm"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -57,29 +58,22 @@
           "maximum": 600,
           "description": "How often to refresh usage from Cursor (seconds)."
         },
-        "tokentrack.barWidth": {
-          "type": "number",
-          "default": 8,
-          "minimum": 4,
-          "maximum": 20,
-          "description": "Width of each ASCII progress bar in characters."
-        },
-        "tokentrack.showAuto": {
+        "tokentrack.showFpm": {
           "type": "boolean",
           "default": true,
-          "description": "Show the Auto (green) usage bar in the status bar."
+          "description": "Show the FPM (First-party models) usage meter in the status bar."
         },
         "tokentrack.showApi": {
           "type": "boolean",
           "default": true,
-          "description": "Show the API (orange) usage bar in the status bar."
+          "description": "Show the API usage meter in the status bar."
         }
       }
     },
     "colors": [
       {
-        "id": "tokentrack.auto",
-        "description": "Color for the Auto usage status bar item",
+        "id": "tokentrack.fpm",
+        "description": "Color for the FPM (First-party models) usage status bar item",
         "defaults": {
           "dark": "#3DDC97",
           "light": "#0A7A4B",
@@ -93,15 +87,6 @@
           "dark": "#F5A623",
           "light": "#C46A00",
           "highContrast": "#F5A623"
-        }
-      },
-      {
-        "id": "tokentrack.total",
-        "description": "Color for the Total fallback usage status bar item",
-        "defaults": {
-          "dark": "#9AA0A6",
-          "light": "#5F6368",
-          "highContrast": "#FFFFFF"
         }
       }
     ]

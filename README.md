@@ -1,16 +1,19 @@
 # TokenTrack
 
-See your **Cursor Premium** token usage at a glance — dual **Auto** (green) and **API** (orange) progress bars in the status bar.
+See your **Cursor Premium** token usage at a glance — compact **FPM** (green) and **API** (orange) meters in the status bar.
+
+**FPM** means **First-party models** (Cursor’s included / auto models). **API** is usage for API and named models.
 
 No API key setup. If you’re signed into Cursor, TokenTrack just works. Sign out, and it stops automatically.
 
 ## Features
 
-- Live **Auto** and **API** usage bars in the status bar
-- Hover for exact percentages, renew date, and plan notes
-- Click a bar to refresh instantly
+- Live **FPM** (First-party models) and **API** usage meters in the status bar
+- Compact 5-block bars: `FPM: ██░░░ 41%`
+- Hover for exact percentages and renew date
+- Click a meter to refresh instantly
 - Open your Cursor usage dashboard from the tooltip or Command Palette
-- Configurable poll interval, bar width, and which bars to show
+- Configurable poll interval and which meters to show
 
 ## Requirements
 
@@ -21,13 +24,12 @@ No API key setup. If you’re signed into Cursor, TokenTrack just works. Sign ou
 
 1. Install **TokenTrack** from the marketplace
 2. Stay signed into Cursor
-3. Look at the **bottom-right status bar** for the Auto / API bars
+3. Look at the **bottom-right status bar** for the meters
 
 | What you see | Meaning |
 |--------------|---------|
-| `Auto ████░░░░ 42%` | Auto-mode usage this billing period |
-| `API ██░░░░░░ 18%` | API / named-model usage this billing period |
-| `Total ████░░░░ 55%` | Shown only if Auto/API split isn’t available |
+| `FPM: ██░░░ 41%` | First-party models usage this billing period |
+| `API: █░░░░ 20%` | API / named-model usage this billing period |
 
 ### Commands
 
@@ -41,9 +43,8 @@ Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `tokentrack.pollIntervalSeconds` | `15` | How often usage refreshes (5–600) |
-| `tokentrack.barWidth` | `8` | Width of each progress bar |
-| `tokentrack.showAuto` | `true` | Show the Auto bar |
-| `tokentrack.showApi` | `true` | Show the API bar |
+| `tokentrack.showFpm` | `true` | Show the FPM (First-party models) meter |
+| `tokentrack.showApi` | `true` | Show the API meter |
 
 ## Privacy
 
