@@ -1,9 +1,6 @@
 import * as vscode from "vscode";
 import type { UsageSnapshot } from "./types";
 
-const FILLED = "█";
-const EMPTY = "░";
-
 const TRUSTED_TOOLTIP_COMMANDS = [
   "tokentrack.openDashboard",
   "tokentrack.refresh",
@@ -16,21 +13,31 @@ export function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-export function formatBar(percent: number, width: number): string {
-  const w = Math.max(1, Math.floor(width));
+const FILLED = "█";
+const EMPTY = "░";
+const BAR_WIDTH = 5;
+/** Each block represents this many percent (100 / 5 = 20). */
+const BLOCK_PERCENT = 100 / BAR_WIDTH;
+
+/**
+ * 5 blocks × 20% each. Ceil so entering a band lights that block:
+ *   0%        → ░░░░░
+ *   1–20%     → █░░░░
+ *   21–40%    → ██░░░
+ *   41–60%    → ███░░
+ *   61–80%    → ████░
+ *   81–100%   → █████
+ */
+export function formatBar(percent: number): string {
   const pct = clampPercent(percent);
-  const filled = Math.round((pct / 100) * w);
-  const empty = Math.max(0, w - filled);
-  return FILLED.repeat(filled) + EMPTY.repeat(empty);
+  const filled =
+    pct <= 0 ? 0 : Math.min(BAR_WIDTH, Math.ceil(pct / BLOCK_PERCENT));
+  return FILLED.repeat(filled) + EMPTY.repeat(BAR_WIDTH - filled);
 }
 
-export function formatStatusText(
-  label: string,
-  percent: number,
-  barWidth: number
-): string {
+export function formatStatusText(label: string, percent: number): string {
   const pct = Math.round(clampPercent(percent));
-  return `${label} ${formatBar(pct, barWidth)} ${pct}%`;
+  return `${label}: ${formatBar(pct)} ${pct}%`;
 }
 
 /** Escape API/user text so it cannot inject markdown links or formatting. */
@@ -40,33 +47,25 @@ export function escapeMarkdown(text: string): string {
 
 export function buildTooltip(
   snapshot: UsageSnapshot,
-  kind: "auto" | "api" | "total"
+  kind: "fpm" | "api"
 ): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
-  // Only allow our own command links — not arbitrary command: URIs from API text.
   md.isTrusted = { enabledCommands: [...TRUSTED_TOOLTIP_COMMANDS] };
   md.supportHtml = false;
 
   const lines: string[] = ["**TokenTrack**", ""];
 
   if (snapshot.autoPercent !== null) {
-    const text = `Auto: ${snapshot.autoPercent.toFixed(1)}%`;
-    lines.push(kind === "auto" ? `**${text}**` : text);
+    const text = `FPM (First-party models): ${snapshot.autoPercent.toFixed(1)}%`;
+    lines.push(kind === "fpm" ? `**${text}**` : text);
   }
   if (snapshot.apiPercent !== null) {
     const text = `API: ${snapshot.apiPercent.toFixed(1)}%`;
     lines.push(kind === "api" ? `**${text}**` : text);
   }
-  if (snapshot.totalPercent !== null) {
-    const text = `Total: ${snapshot.totalPercent.toFixed(1)}%`;
-    lines.push(kind === "total" ? `**${text}**` : text);
-  }
 
   if (snapshot.billingCycleEnd) {
     lines.push(`Renews: ${escapeMarkdown(snapshot.billingCycleEnd)}`);
-  }
-  if (snapshot.displayMessage) {
-    lines.push("", escapeMarkdown(snapshot.displayMessage));
   }
 
   lines.push(
@@ -78,6 +77,5 @@ export function buildTooltip(
   return md;
 }
 
-export const autoColor = new vscode.ThemeColor("tokentrack.auto");
+export const fpmColor = new vscode.ThemeColor("tokentrack.fpm");
 export const apiColor = new vscode.ThemeColor("tokentrack.api");
-export const totalColor = new vscode.ThemeColor("tokentrack.total");

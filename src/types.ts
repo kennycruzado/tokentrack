@@ -1,9 +1,7 @@
 export interface UsageSnapshot {
   autoPercent: number | null;
   apiPercent: number | null;
-  totalPercent: number | null;
   billingCycleEnd: string | null;
-  displayMessage: string | null;
 }
 
 export type AuthResult =
