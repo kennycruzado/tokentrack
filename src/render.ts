@@ -77,5 +77,6 @@ export function buildTooltip(
   return md;
 }
 
-export const fpmColor = new vscode.ThemeColor("tokentrack.fpm");
-export const apiColor = new vscode.ThemeColor("tokentrack.api");
+/** Status-bar hex colors (custom ThemeColor ids are unreliable here). */
+export const fpmColor = "#3DDC97";
+export const apiColor = "#F5A623";

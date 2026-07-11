@@ -54,11 +54,13 @@ function showLoading(): void {
   if (showFpm && fpmItem) {
     fpmItem.text = "FPM: ░░░░░ …";
     fpmItem.tooltip = "TokenTrack: loading…";
+    fpmItem.color = fpmColor;
     fpmItem.show();
   }
   if (showApi && apiItem) {
     apiItem.text = "API: ░░░░░ …";
     apiItem.tooltip = "TokenTrack: loading…";
+    apiItem.color = apiColor;
     apiItem.show();
   }
 }
