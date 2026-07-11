@@ -2,16 +2,24 @@
 
 All notable changes to TokenTrack are documented here.
 
-## [0.1.4] - 2026-07-11
+## [0.1.5] - 2026-07-11
 
 ### Changed
 - Status bar shows **FPM** (First-party models) and **API** only — removed the Total meter
+- Documented that **FPM** means **First-party models** (README, settings, tooltips, package description)
 - Compact **5-block** usage bars (`FPM: ██░░░ 41%`), with each block ≈ 20%
 - Tooltips show percentages and renew date only (dropped Cursor API display copy that could show misleading “usage limit” messages)
-- Marketplace README rewritten for end users; developer setup lives in `DEVELOPMENT.md`
+- FPM meter uses a fixed green (`#3DDC97`); API stays orange (`#F5A623`)
 
 ### Fixed
 - Progress-bar fill math so blocks match percentage bands correctly
+- Status-bar colors not applying reliably via custom theme color IDs
+
+## [0.1.4] - 2026-07-11
+
+### Changed
+- Marketplace README rewritten for end users; developer setup lives in `DEVELOPMENT.md`
+- Changelog added for marketplace release notes
 
 ## [0.1.3] - 2026-07-10
 

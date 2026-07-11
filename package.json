@@ -2,7 +2,7 @@
   "name": "tokentrack",
   "displayName": "TokenTrack",
   "description": "See Cursor Premium FPM (First-party models) and API token usage in the status bar.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "kennycruzado",
   "license": "MIT",
   "icon": "icon.png",
