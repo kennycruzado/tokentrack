@@ -15,12 +15,20 @@ let pollTimer: ReturnType<typeof setInterval> | undefined;
 let refreshing = false;
 let lastSnapshot: UsageSnapshot | null = null;
 
+/**
+ * Editor status (Ln/Col, encoding, language, …) clusters around priority ~100.
+ * Use a low adjacent pair on the Right so FPM + API stay together at the far
+ * right and are never interleaved with those built-ins.
+ */
+const FPM_PRIORITY = 2;
+const API_PRIORITY = 1;
+
 function getConfig() {
   const cfg = vscode.workspace.getConfiguration("tokentrack");
   return {
     pollIntervalSeconds: Math.max(
       5,
-      Math.min(600, cfg.get<number>("pollIntervalSeconds", 15))
+      Math.min(600, cfg.get<number>("pollIntervalSeconds", 20))
     ),
     showFpm: cfg.get<boolean>("showFpm", true),
     showApi: cfg.get<boolean>("showApi", true),
@@ -28,12 +36,12 @@ function getConfig() {
 }
 
 function ensureItems(context: vscode.ExtensionContext): void {
-  // Right-aligned: higher priority sits further left → FPM, API
   if (!fpmItem) {
     fpmItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
-      101
+      FPM_PRIORITY
     );
+    fpmItem.name = "TokenTrack FPM";
     fpmItem.command = "tokentrack.refresh";
     fpmItem.color = fpmColor;
     context.subscriptions.push(fpmItem);
@@ -41,8 +49,9 @@ function ensureItems(context: vscode.ExtensionContext): void {
   if (!apiItem) {
     apiItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
-      100
+      API_PRIORITY
     );
+    apiItem.name = "TokenTrack API";
     apiItem.command = "tokentrack.refresh";
     apiItem.color = apiColor;
     context.subscriptions.push(apiItem);
@@ -52,16 +61,20 @@ function ensureItems(context: vscode.ExtensionContext): void {
 function showLoading(): void {
   const { showFpm, showApi } = getConfig();
   if (showFpm && fpmItem) {
-    fpmItem.text = "FPM: ░░░░░ …";
+    fpmItem.text = "FPM: □□□□□ …";
     fpmItem.tooltip = "TokenTrack: loading…";
     fpmItem.color = fpmColor;
     fpmItem.show();
+  } else {
+    fpmItem?.hide();
   }
   if (showApi && apiItem) {
-    apiItem.text = "API: ░░░░░ …";
+    apiItem.text = "API: □□□□□ …";
     apiItem.tooltip = "TokenTrack: loading…";
     apiItem.color = apiColor;
     apiItem.show();
+  } else {
+    apiItem?.hide();
   }
 }
 

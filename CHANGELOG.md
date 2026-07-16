@@ -2,6 +2,15 @@
 
 All notable changes to TokenTrack are documented here.
 
+## [0.1.6] - 2026-07-16
+
+### Changed
+- Default poll interval is now **20 seconds** (~3 refreshes per minute)
+
+### Fixed
+- FPM and API status items no longer get split apart by Cursor’s built-in status bar entries (Ln/Col, encoding, language, …) on window load — priorities moved to the far right so the pair stays adjacent
+- Bar glyphs switched to `■` / `□` for more consistent width in the status bar font
+
 ## [0.1.5] - 2026-07-11
 
 ### Changed

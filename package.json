@@ -2,7 +2,7 @@
   "name": "tokentrack",
   "displayName": "TokenTrack",
   "description": "See Cursor Premium FPM (First-party models) and API token usage in the status bar.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "kennycruzado",
   "license": "MIT",
   "icon": "icon.png",
@@ -53,7 +53,7 @@
       "properties": {
         "tokentrack.pollIntervalSeconds": {
           "type": "number",
-          "default": 15,
+          "default": 20,
           "minimum": 5,
           "maximum": 600,
           "description": "How often to refresh usage from Cursor (seconds)."

@@ -9,7 +9,7 @@ No API key setup. If you’re signed into Cursor, TokenTrack just works. Sign ou
 ## Features
 
 - Live **FPM** (First-party models) and **API** usage meters in the status bar
-- Compact 5-block bars: `FPM: ██░░░ 41%`
+- Compact 5-block bars: `FPM: ■■□□□ 41%`
 - Hover for exact percentages and renew date
 - Click a meter to refresh instantly
 - Open your Cursor usage dashboard from the tooltip or Command Palette
@@ -28,8 +28,8 @@ No API key setup. If you’re signed into Cursor, TokenTrack just works. Sign ou
 
 | What you see | Meaning |
 |--------------|---------|
-| `FPM: ██░░░ 41%` | First-party models usage this billing period |
-| `API: █░░░░ 20%` | API / named-model usage this billing period |
+| `FPM: ■■□□□ 41%` | First-party models usage this billing period |
+| `API: ■□□□□ 20%` | API / named-model usage this billing period |
 
 ### Commands
 
@@ -42,7 +42,7 @@ Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `tokentrack.pollIntervalSeconds` | `15` | How often usage refreshes (5–600) |
+| `tokentrack.pollIntervalSeconds` | `20` | How often usage refreshes (5–600) |
 | `tokentrack.showFpm` | `true` | Show the FPM (First-party models) meter |
 | `tokentrack.showApi` | `true` | Show the API meter |
 
