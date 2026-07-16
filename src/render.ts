@@ -13,20 +13,20 @@ export function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
-const FILLED = "█";
-const EMPTY = "░";
+const FILLED = "■";
+const EMPTY = "□";
 const BAR_WIDTH = 5;
 /** Each block represents this many percent (100 / 5 = 20). */
 const BLOCK_PERCENT = 100 / BAR_WIDTH;
 
 /**
  * 5 blocks × 20% each. Ceil so entering a band lights that block:
- *   0%        → ░░░░░
- *   1–20%     → █░░░░
- *   21–40%    → ██░░░
- *   41–60%    → ███░░
- *   61–80%    → ████░
- *   81–100%   → █████
+ *   0%        → □□□□□
+ *   1–20%     → ■□□□□
+ *   21–40%    → ■■□□□
+ *   41–60%    → ■■■□□
+ *   61–80%    → ■■■■□
+ *   81–100%   → ■■■■■
  */
 export function formatBar(percent: number): string {
   const pct = clampPercent(percent);
